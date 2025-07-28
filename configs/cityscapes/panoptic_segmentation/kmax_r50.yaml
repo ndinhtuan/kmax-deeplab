@@ -3,7 +3,7 @@ MODEL:
   BACKBONE:
     FREEZE_AT: 0
     NAME: "custom_bn_build_resnet_backbone" # we customize the momentum and eps in syncbn, to align with tf implementation.
-  WEIGHTS: "../R-50.pkl"
+  WEIGHTS: "/media/tuan/Daten/project/pretrained/fpn/R-50.pkl"
   PIXEL_MEAN: [127.5, 127.5, 127.5]
   PIXEL_STD: [127.5, 127.5, 127.5]
   RESNETS:
@@ -65,10 +65,10 @@ MODEL:
       OVERLAP_THRESHOLD: 0.9
 
 DATASETS:
-  TRAIN: ("cityscapes_fine_panoptic_train",)
-  TEST: ("cityscapes_fine_panoptic_val",)
+  TRAIN: ("my_cityscapes_fine_panoptic_train_separated",)
+  TEST: ("my_cityscapes_fine_panoptic_val_separated",)
 SOLVER:
-  IMS_PER_BATCH: 32
+  IMS_PER_BATCH: 1 #32
   BASE_LR: 0.0003
   LR_SCHEDULER_NAME: "TF2WarmupPolyLR"
   MAX_ITER: 60000
@@ -81,9 +81,11 @@ SOLVER:
   AMP:
     ENABLED: True
 INPUT:
-  IMAGE_SIZE: [1025, 2049]
+  # IMAGE_SIZE: [1025, 2049]
+  IMAGE_SIZE: [513, 1025]
   MIN_SCALE: 0.5
-  MAX_SCALE: 2.0
+  # MAX_SCALE: 2.0
+  MAX_SCALE: 0.5
   FORMAT: "RGB"
   DATASET_MAPPER_NAME: "cityscapes_panoptic_lsj"
   MIN_SIZE_TEST: 1025
@@ -93,4 +95,6 @@ TEST:
 DATALOADER:
   FILTER_EMPTY_ANNOTATIONS: True
   NUM_WORKERS: 4
+
+DATA_DIR: "/media/tuan/Daten/dataset/cityscapes/"
 VERSION: 2

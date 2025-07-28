@@ -79,7 +79,8 @@ class PanoptickMaXDeepLabDatasetMapper:
         tfm_gens_copy_paste,
         image_format,
         image_size,
-        dataset_name
+        dataset_name,
+        dataset_path
     ):
         """
         NOTE: this interface is experimental.
@@ -110,7 +111,7 @@ class PanoptickMaXDeepLabDatasetMapper:
         self.image_size = image_size
         self.dataset_name = dataset_name
 
-        dataset_root = os.getenv("DETECTRON2_DATASETS", "datasets")
+        dataset_root = dataset_path #os.getenv("DETECTRON2_DATASETS", "datasets")
         if dataset_name == 'coco':
             image_dir = os.path.join(dataset_root, "coco/train2017")
             gt_dir = os.path.join(dataset_root, "coco/panoptic_train2017")
@@ -185,7 +186,8 @@ class PanoptickMaXDeepLabDatasetMapper:
                 'coco_panoptic_lsj': 'coco',
                 'ade20k_panoptic_lsj': 'ade20k',
                 'cityscapes_panoptic_lsj': 'cityscapes',
-            }[cfg.INPUT.DATASET_MAPPER_NAME]
+            }[cfg.INPUT.DATASET_MAPPER_NAME],
+            "dataset_path": cfg.DATA_DIR
         }
         return ret
 
@@ -397,6 +399,7 @@ class PanoptickMaXDeepLabDatasetMapper:
         return dataset_dict
 
     def __call__(self, dataset_dict):
+
         res = self.call_copypaste(dataset_dict)
         while ("instances" in res and res["instances"].gt_masks.shape[0] == 0) or ("valid_pixel_num" in res and res["valid_pixel_num"] <= 4096):
             # this gt is empty or contains too many void pixels, let's re-generate one.

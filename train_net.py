@@ -49,6 +49,7 @@ from kmax_deeplab import (
     add_kmax_deeplab_config,
     InstanceSegEvaluator,
 )
+from kmax_deeplab.data.datasets.cityscapes_panoptic_separated import register_all_cityscapes_panoptic
 
 from detectron2.data import MetadataCatalog
 
@@ -282,6 +283,7 @@ def setup(args):
 
 def main(args):
     cfg = setup(args)
+    register_all_cityscapes_panoptic(cfg=cfg, root=cfg.DATA_DIR)
 
     torch.backends.cudnn.enabled = True
     if args.eval_only:
@@ -295,6 +297,8 @@ def main(args):
         return res
 
     trainer = Trainer(cfg)
+    from torchtnt.utils.distributed import revert_sync_batchnorm
+    trainer.model = revert_sync_batchnorm(trainer.model)
     trainer.resume_or_load(resume=args.resume)
     return trainer.train()
 
