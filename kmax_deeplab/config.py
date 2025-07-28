@@ -98,3 +98,5 @@ def add_kmax_deeplab_config(cfg):
     cfg.INPUT.MIN_SCALE = 0.2
     cfg.INPUT.MAX_SCALE = 2.0
 
+    cfg.DATA_DIR = ""
+
