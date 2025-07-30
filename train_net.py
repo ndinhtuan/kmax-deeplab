@@ -20,6 +20,7 @@ import os
 from typing import Any, Dict, List, Set
 
 import torch
+from torchtnt.utils.distributed import revert_sync_batchnorm
 
 import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
@@ -288,6 +289,7 @@ def main(args):
     torch.backends.cudnn.enabled = True
     if args.eval_only:
         model = Trainer.build_model(cfg)
+        model = revert_sync_batchnorm(model)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
@@ -297,7 +299,6 @@ def main(args):
         return res
 
     trainer = Trainer(cfg)
-    from torchtnt.utils.distributed import revert_sync_batchnorm
     trainer.model = revert_sync_batchnorm(trainer.model)
     trainer.resume_or_load(resume=args.resume)
     return trainer.train()
