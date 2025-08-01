@@ -1,7 +1,8 @@
 cython
-scipy
-shapely
-timm
+# scipy
+# shapely
+timm==0.6.13
 h5py
 submitit
-scikit-image
+# scikit-image
+torchtnt==0.1.0

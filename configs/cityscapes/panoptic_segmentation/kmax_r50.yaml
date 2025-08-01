@@ -3,7 +3,8 @@ MODEL:
   BACKBONE:
     FREEZE_AT: 0
     NAME: "custom_bn_build_resnet_backbone" # we customize the momentum and eps in syncbn, to align with tf implementation.
-  WEIGHTS: "/media/tuan/Daten/project/pretrained/fpn/R-50.pkl"
+  # WEIGHTS: "/media/tuan/Daten/project/pretrained/fpn/R-50.pkl"
+  WEIGHTS: "/media/tuan/Daten/project/pretrained/panoptic_segmentation/kmax_deeplab/kmax_r50_cityscapes.pth"
   PIXEL_MEAN: [127.5, 127.5, 127.5]
   PIXEL_STD: [127.5, 127.5, 127.5]
   RESNETS:
@@ -82,14 +83,16 @@ SOLVER:
     ENABLED: True
 INPUT:
   # IMAGE_SIZE: [1025, 2049]
-  IMAGE_SIZE: [513, 1025]
+  IMAGE_SIZE: [5, 9]
   MIN_SCALE: 0.5
   # MAX_SCALE: 2.0
   MAX_SCALE: 0.5
   FORMAT: "RGB"
   DATASET_MAPPER_NAME: "cityscapes_panoptic_lsj"
-  MIN_SIZE_TEST: 1025
-  MAX_SIZE_TEST: 2049
+  # MIN_SIZE_TEST: 1025
+  MIN_SIZE_TEST: 5
+  # MAX_SIZE_TEST: 2049
+  MAX_SIZE_TEST: 9
 TEST:
   EVAL_PERIOD: 5000
 DATALOADER:
@@ -97,4 +100,5 @@ DATALOADER:
   NUM_WORKERS: 4
 
 DATA_DIR: "/media/tuan/Daten/dataset/cityscapes/"
+OUTPUT_DIR: "/media/tuan/Daten/PhD/panoptic_segmentation/kmax_deeplab"
 VERSION: 2
