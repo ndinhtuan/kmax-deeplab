@@ -18,11 +18,14 @@ import itertools
 import os
 import logging
 from collections import OrderedDict
+import numpy as np
+import cv2
 
 from typing import Any, Dict, List, Set
 
 import torch
 from torchtnt.utils.distributed import revert_sync_batchnorm
+import torch.nn as nn
 
 import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
@@ -167,6 +170,57 @@ class Trainer(DefaultTrainer):
             )
         else:
             return build_lr_scheduler(cfg, optimizer)
+    
+    @staticmethod
+    def produce_overly_visualization(raw_img: np.ndarray, inst_mask: np.ndarray, ratio: float=0.7) -> np.ndarray:
+        
+        inst_mask = inst_mask * 1.0
+        raw_image = cv2.resize(raw_img, fx=ratio, fy=ratio, dsize=None)
+        raw_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB)
+        inst_ = cv2.resize(inst_mask, fx=ratio, fy=ratio, dsize=None)
+        overlay = np.zeros_like(raw_image)
+        overlay[inst_ > 0.0] = (255, 0, 0)
+        # print(overlay, np.unique(overlay)); exit()
+        viz_ = raw_image + np.uint8(0.5*overlay)
+
+        return viz_
+
+    @classmethod
+    def visualize_prediction(cls, input_: dict, output_: dict, path_to_save: str) -> None:
+
+        name_img = input_["file_name"].split("/")[-1].split(".")[0]
+        tmp = os.path.join(path_to_save, name_img)
+        panoptic_info = output_["panoptic_seg"][1]
+        panoptic_info_dict = {}
+
+        for infor_ in panoptic_info:
+            panoptic_info_dict[infor_["id"]] = infor_
+
+        if not os.path.isdir(tmp):
+            os.makedirs(tmp)
+
+        panoptic_seg = output_["panoptic_seg"][0].cpu().numpy()
+        original_image = output_["original_image"]
+
+        original_image = original_image.permute(1, 2, 0).cpu().numpy()
+
+        inst_ids = np.unique(panoptic_seg)
+
+        for id_ in inst_ids:
+            if id_ != 0:
+                instance_mask = (panoptic_seg == id_)
+                viz_ = cls.produce_overly_visualization(original_image, instance_mask)
+                info_tmp = panoptic_info_dict[id_]
+                content = "{} - {}".format(info_tmp["isthing"], info_tmp["category_id"])
+                viz_ = cv2.putText(viz_, content, (20, 20), cv2.FONT_HERSHEY_SIMPLEX, \
+                        1, (255, 0, 0), 2, cv2.LINE_AA)
+                cv2.imwrite(os.path.join(tmp, "{}.png".format(id_)), viz_)
+
+    @classmethod
+    def run_predict(cls, model: nn.Module, input_: dict, path_to_save: str) -> None:
+
+        output_ = model(input_)
+        cls.visualize_prediction(input_[0], output_[0], path_to_save)
 
     @classmethod
     def test(cls, cfg, model, evaluators=None):
@@ -195,7 +249,15 @@ class Trainer(DefaultTrainer):
         results = OrderedDict()
         for idx, dataset_name in enumerate(cfg.DATASETS.TEST):
             data_loader = cls.build_test_loader(cfg, dataset_name)
-            print("data_loader: ", data_loader); exit()
+            data_loader_copy = copy.deepcopy(data_loader)
+            model_copy = copy.deepcopy(model)
+
+            for idx, input_ in enumerate(data_loader_copy):
+                cls.run_predict(model_copy, input_, "{}/visualization".format(cfg.OUTPUT_DIR))
+
+            del data_loader_copy
+            del model_copy
+
             # When evaluators are passed in as arguments,
             # implicitly assume that evaluators can be created before data_loader.
             if evaluators is not None:
@@ -354,6 +416,7 @@ def main(args):
     torch.backends.cudnn.enabled = True
     if args.eval_only:
         model = Trainer.build_model(cfg)
+        model.eval()
         model = revert_sync_batchnorm(model)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
