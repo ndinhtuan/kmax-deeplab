@@ -238,6 +238,9 @@ class Trainer(DefaultTrainer):
         Returns:
             dict: a dict of result metrics
         """
+
+        model.eval()
+
         logger = logging.getLogger(__name__)
         if isinstance(evaluators, DatasetEvaluator):
             evaluators = [evaluators]
@@ -285,6 +288,8 @@ class Trainer(DefaultTrainer):
 
         if len(results) == 1:
             results = list(results.values())[0]
+
+        model.train()
         return results
 
     @classmethod
